@@ -1,23 +1,28 @@
 from dataclasses import dataclass
 from functools import total_ordering
-from queue import PriorityQueue
+from queue import Queue
+#TODO: BFS uses priority queue but implemented without it
+#from queue import PriorityQueue
 from typing import Union
 
 @dataclass
-@total_ordering
+#TODO: needed when using with PriorityQueue
+#@total_ordering
 class ExchangeRate:
   curTo: str
   rate: float
   visited: bool = False
 
-  def _is_valid_operand(self, other):
-    return hasattr(other, "rate")
-  def __eq__(self, other):
-    if not self._is_valid_operand: return NotImplemented
-    return self.rate == other.rate
-  def __lt__(self, other):
-    if not self._is_valid_operand: return NotImplemented
-    return self.rate < other.rate
+#TODO: try with PriorityQueue. 
+#This part is needed if using priorityqueue to compare between elements
+#  def _is_valid_operand(self, other):
+#    return hasattr(other, "rate") and type(other.rate) == float
+#  def __eq__(self, other):
+#    if not self._is_valid_operand: return NotImplemented
+#    return self.rate == other.rate
+#  def __lt__(self, other):
+#    if not self._is_valid_operand: return NotImplemented
+#    return self.rate < other.rate
 
 class Exchanger:
   rates = {}
@@ -25,19 +30,21 @@ class Exchanger:
   def setRate(self, curFrom: str, curTo: str, rate: float) -> None:
     if not self.rates.get(curFrom): self.rates[curFrom] = []
     self.rates[curFrom].append(ExchangeRate(curTo, rate))
+    # Add reversed exchange rates
     if not self.rates.get(curTo): self.rates[curTo] = []
     self.rates[curTo].append(ExchangeRate(curFrom, round(1/rate, 2)))
 
   def findConvertionRate(self, curFrom: str, curTo: str) -> Union[float, None]:
 
-    ##TODO: Fix this Workaround to be able to findConvertion again for the second time
+    ##TODO: Fix this workaround to be able to findConvertion again for the second time
     ## Potential fix is to use additional type or something
     for values in self.rates.values():
       for j in values:
         j.visited = False
     ##
 
-    ratesToProcess = PriorityQueue()
+    # TODO: Try with priority queue
+    ratesToProcess = Queue() #PriorityQueue()
     possibleConvertions = {}
 
     for i in self.rates.get(curFrom):
@@ -50,12 +57,12 @@ class Exchanger:
       if self.rates.get(currentRate.curTo):
         for i in self.rates.get(currentRate.curTo):
           if not i.visited:
-            i.visited = True
             # If it is possible to convert to another currency, let's multiply
             # how many money we get converting from initial currency
             # by convertion rate from current currency to next one
             ratesToProcess.put(ExchangeRate(i.curTo,
                                round(i.rate * currentRate.rate, 2)))
+            i.visited = True
 
     ##DEBUG: print(possibleConvertions)
     if possibleConvertions.get(curTo):
